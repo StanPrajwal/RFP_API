@@ -1,12 +1,10 @@
-import mongoose, { Schema, SchemaTypes, Types,Document } from "mongoose";
-import { MONGO_MODEL_NAMES } from ".";
-
-
+import { Document, Schema, SchemaTypes, Types } from 'mongoose';
+import { MONGO_MODEL_NAMES } from '.';
 
 const ItemSchema = new Schema({
   item: { type: SchemaTypes.String, required: true },
   quantity: { type: SchemaTypes.Number, required: true },
-  specs: { type: SchemaTypes.Mixed }
+  specs: { type: SchemaTypes.Mixed },
 });
 
 const RFPSchema = new Schema({
@@ -18,30 +16,35 @@ const RFPSchema = new Schema({
   // AI-parsed and structured representation
   descriptionStructured: {
     budget: SchemaTypes.Number,
+    currency: SchemaTypes.String,
+    currencySymbol: SchemaTypes.String,
     deliveryTimeline: SchemaTypes.String,
     paymentTerms: SchemaTypes.String,
     warranty: SchemaTypes.String,
-    items: [ItemSchema]
+    items: [ItemSchema],
   },
-  vendorsInvited: [{ type: SchemaTypes.ObjectId, ref: MONGO_MODEL_NAMES.VENDOR }],
+  vendorsInvited: [
+    { type: SchemaTypes.ObjectId, ref: MONGO_MODEL_NAMES.VENDOR },
+  ],
   status: {
     type: SchemaTypes.String,
-    enum: ["draft", "sent", "responding", "completed"],
-    default: "draft"
+    enum: ['draft', 'sent', 'responding', 'completed'],
+    default: 'draft',
   },
 
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
+export { RFPSchema };
 
-export {  RFPSchema, };
-
-export interface IRFP extends Document {
+export interface RFPModel extends Document {
   title: string;
   descriptionRaw: string;
 
   descriptionStructured: {
     budget?: number;
+    currency?: string;
+    currencySymbol?: string;
     deliveryTimeline?: string;
     paymentTerms?: string;
     warranty?: string;
@@ -54,12 +57,7 @@ export interface IRFP extends Document {
 
   vendorsInvited: Types.ObjectId[];
 
-  status: "draft" | "sent" | "responding" | "completed";
+  status: 'draft' | 'sent' | 'responding' | 'completed';
 
   createdAt: Date;
 }
-
-
-
-
-
