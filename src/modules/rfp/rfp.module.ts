@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { RFPController } from './rfp.controller';
 import { RFPService } from './rfp.service';
 import { OpenAiModule } from '../openai/openai.module';
@@ -8,17 +8,21 @@ import { RFPSchema } from 'src/schemas/rfp.schema';
 import { VendorModule } from '../vendor/vendor.module';
 
 import { EmailModule } from '../mail/mail.module';
+import { VendorProposalSchema } from 'src/schemas/proposal.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: MONGO_MODEL_NAMES.RFP, schema: RFPSchema },
+      { name: MONGO_MODEL_NAMES.PROPOSAL, schema: VendorProposalSchema },
     ]),
     OpenAiModule,
-    VendorModule,
-    EmailModule,
+    forwardRef(() => VendorModule),
+    forwardRef(() => EmailModule),
   ],
-  providers: [RFPService],
   controllers: [RFPController],
+  providers: [RFPService],
+
+  exports: [RFPService],
 })
 export class RFPModule {}

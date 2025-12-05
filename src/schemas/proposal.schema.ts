@@ -1,8 +1,8 @@
-import mongoose, { Schema, SchemaTypes, Types, Document } from 'mongoose';
+import { Document, Schema, SchemaTypes, Types } from 'mongoose';
 
 const ItemSchema = new Schema({
   item: { type: SchemaTypes.String, required: true },
-  quantity: { type: SchemaTypes.Number, required: true },
+  quantity: { type: SchemaTypes.Number },
   unitPrice: { type: SchemaTypes.Number },
   totalPrice: { type: SchemaTypes.Number },
 });
@@ -31,7 +31,11 @@ const VendorProposalSchema = new Schema({
     termsScore: SchemaTypes.Number,
     deliveryScore: SchemaTypes.Number,
     overallScore: SchemaTypes.Number,
-    aiRecommendation: String,
+    aiRecommendation: SchemaTypes.String,
+    warrantyScore: SchemaTypes.Number,
+    paymentScore: SchemaTypes.Number,
+    completenessScore: SchemaTypes.Number,
+    total: SchemaTypes.Number,
   },
 
   createdAt: { type: SchemaTypes.Date, default: Date.now },
@@ -77,4 +81,4 @@ interface ProposalModel extends Document {
   createdAt: Date;
 }
 
-export type { ProposalModel, ProposalItem, ProposalParsed, ProposalScoring };
+export type { ProposalItem, ProposalModel, ProposalParsed, ProposalScoring };

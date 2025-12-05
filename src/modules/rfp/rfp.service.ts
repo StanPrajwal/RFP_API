@@ -13,6 +13,7 @@ import { OpenAiService } from '../openai/openai.service';
 import { VendorService } from '../vendor/vendor.service';
 import { CreateRfpDto } from './rfp.dto';
 import { MailService } from '../mail/mail.service';
+import { ProposalModel } from 'src/schemas/proposal.schema';
 
 @Injectable()
 export class RFPService {
@@ -22,6 +23,8 @@ export class RFPService {
     private readonly vendorService: VendorService,
     private readonly mailService: MailService,
     @InjectModel(MONGO_MODEL_NAMES.RFP) readonly _rfpModel: Model<RFPModel>,
+    @InjectModel(MONGO_MODEL_NAMES.PROPOSAL)
+    private readonly _proposalModel: Model<ProposalModel>,
   ) {}
 
   //#region Generate RFP
@@ -199,6 +202,71 @@ export class RFPService {
       throw new InternalServerErrorException(
         error.message || 'Failed to send proposals',
       );
+    }
+  }
+
+  // Store Vender Proposal
+  async saveVendorProposal({
+    sender,
+    subject,
+    body,
+    attachments,
+    rfpId,
+    vendorId,
+    rawResponse,
+  }: {
+    sender: string;
+    subject: string;
+    body: string;
+    attachments?: any;
+    rfpId: string;
+    vendorId: string | Types.ObjectId;
+    rawResponse: any;
+  }) {
+    try {
+      // Check if vendor already submitted proposal for same RFP
+      const existing = await this._proposalModel.findOne({
+        rfpId,
+        vendorId: vendorId,
+      });
+
+      if (existing) {
+        this.logger.warn(
+          `⚠️ Vendor ${sender} already submitted proposal for RFP ${rfpId}`,
+        );
+        return existing;
+      }
+
+      const aiStructured = await this.openaiService.parseVendorProposal({
+        sender,
+        subject,
+        body,
+      });
+
+      const rfp = await this.getRfpById(rfpId);
+
+      const aiScore = await this.openaiService.generateProposalScore({
+        rfp,
+        proposal: aiStructured,
+      });
+      // Save Proposal
+      const created = await this._proposalModel.create({
+        rfpId,
+        vendorId,
+        rawResponse,
+        parsed: aiStructured,
+        scoring: aiScore,
+      });
+
+      this.logger.log(`Proposal saved for vendor ${sender} under RFP ${rfpId}`);
+
+      return created;
+    } catch (error) {
+      this.logger.error(
+        `Error saving vendor proposal (RFP: ${rfpId}, Vendor: ${sender})`,
+        error.stack || error.message,
+      );
+      throw error;
     }
   }
 

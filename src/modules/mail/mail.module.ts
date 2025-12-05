@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { VendorModule } from '../vendor/vendor.module';
 import { ImapService } from './imap.service';
 import { MailService } from './mail.service';
+import { RFPModule } from '../rfp/rfp.module';
 
 @Module({
-  imports: [VendorModule],
-  providers: [MailService, ImapService, VendorModule],
-  exports: [MailService],
+  imports: [forwardRef(() => RFPModule), forwardRef(() => VendorModule)],
+  providers: [MailService, ImapService],
+  exports: [MailService, ImapService],
 })
 export class EmailModule {}

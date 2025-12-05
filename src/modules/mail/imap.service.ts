@@ -1,14 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import { Cron } from '@nestjs/schedule';
 import { VendorService } from '../vendor/vendor.service';
+import { RFPService } from '../rfp/rfp.service';
 
 @Injectable()
 export class ImapService {
   private readonly logger = new Logger(ImapService.name);
 
-  constructor(private readonly vendorService: VendorService) {}
+  constructor(
+    @Inject(forwardRef(() => RFPService))
+    private readonly rfpService: RFPService,
+    private readonly vendorService: VendorService,
+  ) {}
 
   private createImapConnection() {
     return new Imap({
@@ -129,7 +134,7 @@ export class ImapService {
 
                     // Save proposal DB entry
                     try {
-                      await this.vendorService.saveVendorProposal({
+                      await this.rfpService.saveVendorProposal({
                         sender,
                         subject,
                         body,

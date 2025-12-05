@@ -11,6 +11,7 @@ import { VendorModel } from 'src/schemas/vendor.schema';
 import { RegisterVendorDto } from './vendor.dto';
 import { ProposalModel } from 'src/schemas/proposal.schema';
 import { OpenAiService } from '../openai/openai.service';
+import { RFPService } from '../rfp/rfp.service';
 
 @Injectable()
 export class VendorService {
@@ -18,9 +19,6 @@ export class VendorService {
   constructor(
     @InjectModel(MONGO_MODEL_NAMES.VENDOR)
     private readonly _vendorModel: Model<VendorModel>,
-    @InjectModel(MONGO_MODEL_NAMES.PROPOSAL)
-    private readonly _proposalModel: Model<ProposalModel>,
-    private readonly openaiService: OpenAiService,
   ) {}
 
   // CREATE VENDOR
@@ -106,64 +104,6 @@ export class VendorService {
       throw new InternalServerErrorException(
         error?.message || 'Failed to fetch vendors',
       );
-    }
-  }
-
-  // Store Vender Proposal
-  async saveVendorProposal({
-    sender,
-    subject,
-    body,
-    attachments,
-    rfpId,
-    vendorId,
-    rawResponse,
-  }: {
-    sender: string;
-    subject: string;
-    body: string;
-    attachments?: any;
-    rfpId: string;
-    vendorId: string | Types.ObjectId;
-    rawResponse: any;
-  }) {
-    try {
-      // Check if vendor already submitted proposal for same RFP
-      const existing = await this._proposalModel.findOne({
-        rfpId,
-        vendorId: vendorId,
-      });
-
-      if (existing) {
-        this.logger.warn(
-          `⚠️ Vendor ${sender} already submitted proposal for RFP ${rfpId}`,
-        );
-        return existing;
-      }
-
-      const aiStructured = await this.openaiService.parseVendorProposal({
-        sender,
-        subject,
-        body,
-      });
-
-      // Save Proposal
-      const created = await this._proposalModel.create({
-        rfpId,
-        vendorId,
-        rawResponse,
-        parsed: aiStructured,
-      });
-
-      this.logger.log(`Proposal saved for vendor ${sender} under RFP ${rfpId}`);
-
-      return created;
-    } catch (error) {
-      this.logger.error(
-        `Error saving vendor proposal (RFP: ${rfpId}, Vendor: ${sender})`,
-        error.stack || error.message,
-      );
-      throw error;
     }
   }
 }
