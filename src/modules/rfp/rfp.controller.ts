@@ -19,15 +19,16 @@ class RFPController {
   }
 
   //Get RFP by ID
-  @Get(':id')
+  @Get('fetch-rfp/:id')
   getRfp(@Param('id') id: string) {
     return this.rfpService.getRfpById(id);
   }
 
   //List all  Saved RFPs
-  @Get()
-  listRFPs() {
-    return this.rfpService.getAllRFPs();
+  @Get('fetch-all-rfp')
+  async listRFPs() {
+    console.log('List');
+    return await this.rfpService.getAllRFPs();
   }
 
   //Assign vendors to RFP

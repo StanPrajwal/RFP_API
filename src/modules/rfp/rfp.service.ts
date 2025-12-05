@@ -3,6 +3,7 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
@@ -11,12 +12,15 @@ import { RFPModel } from 'src/schemas/rfp.schema';
 import { OpenAiService } from '../openai/openai.service';
 import { VendorService } from '../vendor/vendor.service';
 import { CreateRfpDto } from './rfp.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class RFPService {
+  private readonly logger = new Logger(MailService.name);
   constructor(
     private readonly openaiService: OpenAiService,
     private readonly vendorService: VendorService,
+    private readonly mailService: MailService,
     @InjectModel(MONGO_MODEL_NAMES.RFP) readonly _rfpModel: Model<RFPModel>,
   ) {}
 
@@ -88,7 +92,7 @@ export class RFPService {
   //#region Get All RFP
   async getAllRFPs() {
     try {
-      const rfpList = await this._rfpModel.find().sort({ createdAt: -1 });
+      const rfpList = await this._rfpModel.find();
 
       return {
         code: HttpStatus.OK,
@@ -96,6 +100,8 @@ export class RFPService {
         data: rfpList,
       };
     } catch (error) {
+      console.log(error);
+      this.logger.error(`Email sending failed: ${error}`);
       throw new InternalServerErrorException(
         error?.message || 'Failed to fetch RFP list',
       );
@@ -144,8 +150,8 @@ export class RFPService {
         throw new BadRequestException('RFP not found');
       }
 
-      if (!rfp.vendorsInvited || rfp.vendorsInvited.length === 0) {
-        throw new BadRequestException('No vendors assigned to this RFP');
+      if (!vendorIds || vendorIds.length === 0) {
+        throw new BadRequestException('No vendors selected');
       }
 
       const vendors: any = await this.vendorService.getVendorsByIds(vendorIds);
@@ -153,20 +159,41 @@ export class RFPService {
         return vendors;
       }
 
-      for (const vendor of vendors?.data) {
-        // Email Service Call
+      // Loop through each vendor and send email
+      for (const vendor of vendors?.data || []) {
+        await this.mailService.sendRfpEmail(vendor?.email, {
+          vendorName: vendor?.name,
+          title: rfp.title,
+          rfpId: rfpId,
+          budget: rfp.descriptionStructured?.budget,
+          currencySymbol: rfp.descriptionStructured?.currencySymbol,
+          deliveryTimeline: rfp.descriptionStructured?.deliveryTimeline,
+          paymentTerms: rfp.descriptionStructured?.paymentTerms,
+          warranty: rfp.descriptionStructured?.warranty,
+          items:
+            rfp.descriptionStructured?.items?.map((i) => ({
+              item: i.item,
+              quantity: i.quantity,
+              specs: i.specs,
+            })) || [],
+        });
       }
 
-      // Update status
+      // Update RFP status
       rfp.status = 'sent';
       await rfp.save();
 
       return {
         code: HttpStatus.OK,
         message: 'RFP proposals sent to all selected vendors',
-        data: { sentTo: vendors.map((v) => v.email) },
+        data: {
+          // sentTo: vendors.data.map((v) => v.email),
+          sendTo: vendorIds,
+        },
       };
     } catch (error) {
+      console.error(error);
+
       if (error instanceof BadRequestException) throw error;
 
       throw new InternalServerErrorException(
@@ -174,6 +201,7 @@ export class RFPService {
       );
     }
   }
+
   getProposalsByRfp(id: string) {}
   compareProposals(id: string) {}
 }

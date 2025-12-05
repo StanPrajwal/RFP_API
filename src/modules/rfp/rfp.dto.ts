@@ -3,11 +3,16 @@ class GenerateRfpDto {
 }
 class CreateRfpDto {
   title: string;
-  items: any[];
-  budget: number;
-  deliveryTimeline: string;
-  paymentTerms: string;
-  warranty?: string;
+  descriptionRaw: string;
+  descriptionStructured: {
+    items: any[];
+    currency: string;
+    currencySymbol: string;
+    budget: number;
+    deliveryTimeline: string;
+    paymentTerms: string;
+    warranty?: string;
+  };
 }
 class AssignVendorsDto {
   vendorIds: string[];

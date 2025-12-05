@@ -73,4 +73,72 @@ export class OpenAiService {
       throw new Error('Failed to generate RFP');
     }
   }
+
+  async parseVendorProposal(payload: {
+    sender: string;
+    subject: string;
+    body: string;
+  }): Promise<any> {
+    try {
+      const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+
+      const prompt = `
+Extract proposal information from the vendor's email. 
+Return STRICT RAW JSON with NO markdown or code blocks.
+
+OUTPUT SCHEMA:
+{
+  "totalPrice": number | null,
+  "currency": string | null,
+  "paymentTerms": string | null,
+  "deliveryTimeline": string | null,
+  "warranty": string | null,
+  "items": [
+    {
+      "item": string,
+      "quantity": number | null,
+      "unitPrice": number | null,
+      "totalPrice": number | null
+    }
+  ],
+  "additionalNotes": string | null
+}
+
+Email:
+Sender: ${payload.sender}
+Subject: ${payload.subject}
+Body:
+"""
+${payload.body}
+"""
+`;
+
+      const response = await this.openai.responses.create({
+        model: deployment,
+        input: [
+          {
+            role: 'system',
+            content:
+              'You extract structured procurement proposals from unstructured vendor emails. Output only clean JSON.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+
+      let output = response.output_text.trim();
+
+      // Remove accidental markdown code fences
+      output = output.replace(/```json/i, '');
+      output = output.replace(/```/g, '');
+      output = output.trim();
+
+      return JSON.parse(output);
+    } catch (error) {
+      console.error('Vendor Parsing Error:', error);
+      throw new Error('Failed to parse vendor proposal');
+    }
+  }
 }

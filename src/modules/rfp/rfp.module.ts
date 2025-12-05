@@ -7,6 +7,8 @@ import { MONGO_MODEL_NAMES } from 'src/schemas';
 import { RFPSchema } from 'src/schemas/rfp.schema';
 import { VendorModule } from '../vendor/vendor.module';
 
+import { EmailModule } from '../mail/mail.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -14,6 +16,7 @@ import { VendorModule } from '../vendor/vendor.module';
     ]),
     OpenAiModule,
     VendorModule,
+    EmailModule,
   ],
   providers: [RFPService],
   controllers: [RFPController],

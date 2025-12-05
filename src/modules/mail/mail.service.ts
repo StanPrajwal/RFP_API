@@ -22,19 +22,27 @@ export class MailService {
   }
 
   private compileTemplate(templateName: string, context: any) {
-    const filePath = path.join(__dirname, 'templates', `${templateName}.hbs`);
-    const templateStr = fs.readFileSync(filePath, 'utf8');
-    return handlebars.compile(templateStr)(context);
+    const filePath = path.join(
+      process.cwd(),
+      'src/modules/mail/templates',
+      `${templateName}.html`,
+    );
+    const templateStr = fs.readFileSync(filePath, 'utf-8');
+    const template = handlebars.compile(templateStr);
+
+    const plainContext = JSON.parse(JSON.stringify(context));
+
+    return template(plainContext);
   }
 
   async sendRfpEmail(to: string, payload: any) {
-    const html = this.compileTemplate('rfp-email', payload);
+    const html = this.compileTemplate('rfp-mail', payload);
 
     try {
       await this.transporter.sendMail({
         from: `"Procurement System" <${process.env.EMAIL_USER}>`,
         to,
-        subject: `RFP Invitation - ${payload.title}`,
+        subject: `RFP Invitation - ${payload.title} | RFP-ID: ${payload.rfpId}`,
         html,
       });
 

@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+
+<body style="font-family: Arial; color: #222;">
+  <h2>New RFP Invitation</h2>
+
+  <p>Hello {{vendorName}},</p>
+
+  <p>You are invited to submit a proposal for:</p>
+
+  <ul>
+    <li><strong>Title:</strong> {{title}}</li>
+    <li><strong>RFP Reference ID:</strong> {{rfpId}}</li>
+    <li><strong>Budget:</strong> {{currencySymbol}}{{budget}}</li>
+    <li><strong>Delivery Timeline:</strong> {{deliveryTimeline}}</li>
+    <li><strong>Payment Terms:</strong> {{paymentTerms}}</li>
+    <li><strong>Warranty:</strong> {{warranty}}</li>
+  </ul>
+
+  <h3 style="margin-top: 15px;">Item Details</h3>
+
+  <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse; font-family: Arial;">
+    <thead>
+      <tr style="background: #f2f2f2;">
+        <th style="border: 1px solid #ccc;">Item</th>
+        <th style="border: 1px solid #ccc;">Quantity</th>
+        <th style="border: 1px solid #ccc;">Specifications</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each items}}
+      <tr>
+        <td style="border: 1px solid #ccc;">{{item}}</td>
+        <td style="border: 1px solid #ccc;">{{quantity}}</td>
+        <td style="border: 1px solid #ccc;">
+          {{specs}}
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <p style="margin-top: 20px;">
+    Please reply to this email with your full proposal including pricing, terms, delivery dates, and warranty
+    information.
+  </p>
+
+  <p>Thanks,<br />Procurement Team</p>
+</body>
+
+</html>

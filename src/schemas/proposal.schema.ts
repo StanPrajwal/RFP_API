@@ -1,19 +1,18 @@
-import mongoose, { Schema, SchemaTypes, Types,Document } from "mongoose";
-
+import mongoose, { Schema, SchemaTypes, Types, Document } from 'mongoose';
 
 const ItemSchema = new Schema({
   item: { type: SchemaTypes.String, required: true },
   quantity: { type: SchemaTypes.Number, required: true },
   unitPrice: { type: SchemaTypes.Number },
-  totalPrice: { type: SchemaTypes.Number }
+  totalPrice: { type: SchemaTypes.Number },
 });
 
 const VendorProposalSchema = new Schema({
-  rfpId: { type: SchemaTypes.ObjectId, ref: "RFP", required: true },
-  vendorId: { type: SchemaTypes.ObjectId, ref: "Vendor", required: true },
+  rfpId: { type: SchemaTypes.ObjectId, ref: 'RFP', required: true },
+  vendorId: { type: SchemaTypes.ObjectId, ref: 'Vendor', required: true },
 
   // Raw email text from vendor
-  rawResponse: { type: SchemaTypes.String, required: true },
+  rawResponse: { type: SchemaTypes.Mixed, required: true },
 
   // AI extracted fields
   parsed: {
@@ -22,10 +21,8 @@ const VendorProposalSchema = new Schema({
     paymentTerms: SchemaTypes.String,
     deliveryTimeline: SchemaTypes.String,
     warranty: SchemaTypes.String,
-    items: [
-      ItemSchema
-    ],
-    additionalNotes: SchemaTypes.String
+    items: [ItemSchema],
+    additionalNotes: SchemaTypes.String,
   },
 
   // AI scoring for comparison
@@ -34,18 +31,13 @@ const VendorProposalSchema = new Schema({
     termsScore: SchemaTypes.Number,
     deliveryScore: SchemaTypes.Number,
     overallScore: SchemaTypes.Number,
-    aiRecommendation: String
+    aiRecommendation: String,
   },
 
-  createdAt: { type: SchemaTypes.Date, default: Date.now }
+  createdAt: { type: SchemaTypes.Date, default: Date.now },
 });
 
-
-const VendorProposalModel = mongoose.model("VendorProposal", VendorProposalSchema);
-
-export { VendorProposalModel, VendorProposalSchema };
-
-
+export { VendorProposalSchema };
 
 interface ProposalItem {
   item: string;
@@ -64,7 +56,7 @@ interface ProposalParsed {
   additionalNotes?: string;
 }
 
- interface ProposalScoring {
+interface ProposalScoring {
   priceScore?: number;
   termsScore?: number;
   deliveryScore?: number;
@@ -72,7 +64,7 @@ interface ProposalParsed {
   aiRecommendation?: string;
 }
 
-interface IProposal extends Document {
+interface ProposalModel extends Document {
   rfpId: Types.ObjectId;
   vendorId: Types.ObjectId;
 
@@ -85,4 +77,4 @@ interface IProposal extends Document {
   createdAt: Date;
 }
 
-export type { IProposal, ProposalItem, ProposalParsed, ProposalScoring };
+export type { ProposalModel, ProposalItem, ProposalParsed, ProposalScoring };
