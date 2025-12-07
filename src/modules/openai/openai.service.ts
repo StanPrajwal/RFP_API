@@ -217,4 +217,101 @@ ${JSON.stringify(payload.proposal, null, 2)}
       throw new Error('Failed to generate vendor score');
     }
   }
+
+  async compareProposals(payload: {
+    rfp: any;
+    proposals: any[];
+  }): Promise<any> {
+    try {
+      const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+
+      const prompt = `
+You are an expert procurement analyst. Compare multiple vendor proposals and create a comprehensive comparison table.
+
+Return STRICT RAW JSON with NO markdown or code blocks.
+
+OUTPUT SCHEMA:
+{
+  "summary": {
+    "totalProposals": number,
+    "bestPrice": {
+      "vendorId": string,
+      "vendorName": string,
+      "price": number,
+      "currency": string
+    },
+    "bestDelivery": {
+      "vendorId": string,
+      "vendorName": string,
+      "timeline": string
+    },
+    "bestOverall": {
+      "vendorId": string,
+      "vendorName": string,
+      "score": number,
+      "reason": string
+    }
+  },
+  "comparisonTable": [
+    {
+      "vendorId": string,
+      "vendorName": string,
+      "totalPrice": number,
+      "currency": string,
+      "deliveryTimeline": string,
+      "paymentTerms": string,
+      "warranty": string,
+      "overallScore": number,
+      "priceScore": number,
+      "deliveryScore": number,
+      "warrantyScore": number,
+      "completenessScore": number,
+      "aiRecommendation": string,
+      "strengths": string[],
+      "weaknesses": string[]
+    }
+  ],
+  "recommendation": {
+    "recommendedVendorId": string,
+    "recommendedVendorName": string,
+    "reasoning": string,
+    "keyFactors": string[]
+  }
+}
+
+RFP REQUIREMENTS:
+${JSON.stringify(payload.rfp, null, 2)}
+
+VENDOR PROPOSALS:
+${JSON.stringify(payload.proposals, null, 2)}
+`;
+
+      const response = await this.openai.responses.create({
+        model: deployment,
+        input: [
+          {
+            role: 'system',
+            content:
+              'You are an expert procurement analyst. Compare vendor proposals and output ONLY strict JSON with comparison data.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+
+      let output = response.output_text.trim();
+
+      // Remove accidental markdown code fences
+      output = output.replace(/```json/i, '');
+      output = output.replace(/```/g, '');
+      output = output.trim();
+
+      return JSON.parse(output);
+    } catch (error) {
+      console.error('Proposal Comparison Error:', error);
+      throw new Error('Failed to compare proposals');
+    }
+  }
 }

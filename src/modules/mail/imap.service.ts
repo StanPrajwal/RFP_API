@@ -1,18 +1,25 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import { Cron } from '@nestjs/schedule';
 import { VendorService } from '../vendor/vendor.service';
 import { RFPService } from '../rfp/rfp.service';
+import { MONGO_MODEL_NAMES } from 'src/schemas';
+import { ProposalModel } from 'src/schemas/proposal.schema';
 
 @Injectable()
 export class ImapService {
   private readonly logger = new Logger(ImapService.name);
+  private readonly processedMessageIds = new Set<string>(); // In-memory cache for current session
 
   constructor(
     @Inject(forwardRef(() => RFPService))
     private readonly rfpService: RFPService,
     private readonly vendorService: VendorService,
+    @InjectModel(MONGO_MODEL_NAMES.PROPOSAL)
+    private readonly _proposalModel: Model<ProposalModel>,
   ) {}
 
   private createImapConnection() {
@@ -85,10 +92,38 @@ export class ImapService {
                     const subject = parsed.subject || '';
                     const body = parsed.text || parsed.html || '';
                     const attachments = parsed.attachments || [];
+                    // Extract messageId early to prevent duplicate processing
+                    const emailMessageId = parsed.messageId || parsed.headers?.['message-id']?.[0] || null;
+
+                    // Check if this email was already processed in this session
+                    if (emailMessageId && this.processedMessageIds.has(emailMessageId)) {
+                      this.logger.warn(
+                        `⚠️ Email with messageId ${emailMessageId} already processed in this session. Skipping.`,
+                      );
+                      return;
+                    }
+
+                    // Check if this email was already processed (saved in database)
+                    if (emailMessageId) {
+                      const existingProposal = await this._proposalModel.findOne({
+                        emailMessageId: emailMessageId,
+                      });
+
+                      if (existingProposal) {
+                        this.logger.warn(
+                          `⚠️ Email with messageId ${emailMessageId} already processed and saved. Skipping duplicate.`,
+                        );
+                        return;
+                      }
+
+                      // Mark as processed in current session
+                      this.processedMessageIds.add(emailMessageId);
+                    }
+
                     const rawResponse = {
                       rawEmail: stream,
                       headers: parsed.headers,
-                      messageId: parsed.messageId,
+                      messageId: parsed.messageId || emailMessageId,
                       date: parsed.date,
                       envelope: parsed.envelope,
                       parsed,

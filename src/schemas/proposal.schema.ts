@@ -11,6 +11,9 @@ const VendorProposalSchema = new Schema({
   rfpId: { type: SchemaTypes.ObjectId, ref: 'RFP', required: true },
   vendorId: { type: SchemaTypes.ObjectId, ref: 'Vendor', required: true },
 
+  // Email message ID to prevent duplicate processing
+  emailMessageId: { type: SchemaTypes.String, unique: true, sparse: true },
+
   // Raw email text from vendor
   rawResponse: { type: SchemaTypes.Mixed, required: true },
 
@@ -40,6 +43,9 @@ const VendorProposalSchema = new Schema({
 
   createdAt: { type: SchemaTypes.Date, default: Date.now },
 });
+
+// Add unique compound index to prevent duplicate proposals
+VendorProposalSchema.index({ rfpId: 1, vendorId: 1 }, { unique: true });
 
 export { VendorProposalSchema };
 
@@ -71,6 +77,7 @@ interface ProposalScoring {
 interface ProposalModel extends Document {
   rfpId: Types.ObjectId;
   vendorId: Types.ObjectId;
+  emailMessageId?: string;
 
   rawResponse: string;
 

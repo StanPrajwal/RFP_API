@@ -50,7 +50,7 @@ class RFPController {
   }
 
   //AI Compare proposals
-  @Post(':id/compare')
+  @Get(':id/compare')
   compare(@Param('id') id: string) {
     return this.rfpService.compareProposals(id);
   }

@@ -9,12 +9,14 @@ import { VendorModule } from '../vendor/vendor.module';
 
 import { EmailModule } from '../mail/mail.module';
 import { VendorProposalSchema } from 'src/schemas/proposal.schema';
+import { EmailOutboundSchema } from 'src/schemas/email-outbound.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: MONGO_MODEL_NAMES.RFP, schema: RFPSchema },
       { name: MONGO_MODEL_NAMES.PROPOSAL, schema: VendorProposalSchema },
+      { name: MONGO_MODEL_NAMES.EmailOutbound, schema: EmailOutboundSchema },
     ]),
     OpenAiModule,
     forwardRef(() => VendorModule),
